@@ -1,10 +1,10 @@
-module github.com/documatrix/go-lprlib
+module github.com/paulmatencio/lprlib
 
-go 1.18
+go 1.19
 
 require (
-	github.com/stretchr/testify v1.8.0
-	golang.org/x/text v0.3.8
+	github.com/stretchr/testify v1.8.4
+	golang.org/x/text v0.13.0
 )
 
 require (
