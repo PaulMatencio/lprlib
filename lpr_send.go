@@ -346,6 +346,9 @@ func (lpr *LprSend) SendFile() error {
 	return err
 }
 
+/*
+called by  SendFile
+*/
 func (lpr *LprSend) sendFile(reader io.Reader, fileSize int64) error {
 
 	if err := lpr.startPrintJob(); err != nil {
@@ -380,8 +383,8 @@ func (lpr *LprSend) sendFile(reader io.Reader, fileSize int64) error {
 	if length != 0 {
 		logDebugf("Received: %d", receiveBuffer[0])
 		if receiveBuffer[0] != 0 {
-			errorstring := fmt.Sprint("PRINTER_ERROR Printer reported an error (", receiveBuffer[0], ")!")
-			return &LprError{errorstring}
+			errorString := fmt.Sprint("PRINTER_ERROR Printer reported an error (", receiveBuffer[0], ")!")
+			return &LprError{errorString}
 		}
 	}
 
@@ -391,7 +394,7 @@ func (lpr *LprSend) sendFile(reader io.Reader, fileSize int64) error {
 	 */
 	size := lpr.MaxSize
 
-	var rsize int
+	var rSize int
 
 	/* position of the file */
 	var position uint64
@@ -402,7 +405,7 @@ func (lpr *LprSend) sendFile(reader io.Reader, fileSize int64) error {
 	// var percent float32
 	logDebug("Sending file...")
 	for {
-		rsize, err = reader.Read(fileBuffer)
+		rSize, err = reader.Read(fileBuffer)
 		if err != nil {
 			if err != io.EOF {
 				return &LprError{fmt.Sprintf("Error reading from file %s: %s", lpr.inputFileName, err)}
@@ -411,8 +414,8 @@ func (lpr *LprSend) sendFile(reader io.Reader, fileSize int64) error {
 			// done
 			break
 		}
-		if rsize > 0 {
-			size = uint64(rsize)
+		if rSize > 0 {
+			size = uint64(rSize)
 		}
 
 		_, err = lpr.writeByte(fileBuffer[:size])
@@ -442,16 +445,21 @@ func (lpr *LprSend) sendFile(reader io.Reader, fileSize int64) error {
 	if length != 0 {
 		logDebugf("Received: %d", receiveBuffer[0])
 		if receiveBuffer[0] != 0 {
-			errorstring := fmt.Sprint("PRINTER_ERROR Printer reported an error (", receiveBuffer[0], ")!")
-			return &LprError{errorstring}
+			errorString := fmt.Sprint("PRINTER_ERROR Printer reported an error (", receiveBuffer[0], ")!")
+			return &LprError{errorString}
 		}
 	}
 
 	return nil
 }
 
-func (lpr *LprSend) sendFile1(reader io.Reader) error {
+/*
+		called by SendStdin
+	    read data from stdin
 
+*/
+
+func (lpr *LprSend) sendStdin(reader io.Reader) error {
 	var (
 		Buf                 []byte
 		err                 error
@@ -497,8 +505,8 @@ func (lpr *LprSend) sendFile1(reader io.Reader) error {
 	if length != 0 {
 		logDebugf("Received: %d", receiveBuffer[0])
 		if receiveBuffer[0] != 0 {
-			errorstring := fmt.Sprint("PRINTER_ERROR Printer reported an error (", receiveBuffer[0], ")!")
-			return &LprError{errorstring}
+			errorString := fmt.Sprint("PRINTER_ERROR Printer reported an error (", receiveBuffer[0], ")!")
+			return &LprError{errorString}
 		}
 	}
 
@@ -549,15 +557,15 @@ func (lpr *LprSend) sendFile1(reader io.Reader) error {
 	if length != 0 {
 		logDebugf("Received: %d", receiveBuffer[0])
 		if receiveBuffer[0] != 0 {
-			errorstring := fmt.Sprint("PRINTER_ERROR Printer reported an error (", receiveBuffer[0], ")!")
-			return &LprError{errorstring}
+			errorString := fmt.Sprint("PRINTER_ERROR Printer reported an error (", receiveBuffer[0], ")!")
+			return &LprError{errorString}
 		}
 	}
 
 	return nil
 }
 
-// Close Close the connection to the remote printer
+// Close to close the connection to the remote printer
 func (lpr *LprSend) Close() error {
 	return lpr.socket.Close()
 }
@@ -568,7 +576,7 @@ func Send(file string, hostname string, port uint16, queue string, username stri
 
 	err = lpr.Init(hostname, file, port, queue, username, timeout)
 	if err != nil {
-		err = fmt.Errorf("Error initializing connection to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
+		err = fmt.Errorf("error initializing connection to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
 		return
 	}
 
@@ -581,25 +589,28 @@ func Send(file string, hostname string, port uint16, queue string, username stri
 
 	err = lpr.SendConfiguration()
 	if err != nil {
-		err = fmt.Errorf("Error sending configuration to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
+		err = fmt.Errorf("error sending configuration to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
 		return
 	}
 
 	err = lpr.SendFile()
 	if err != nil {
-		err = fmt.Errorf("Error sending file to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
+		err = fmt.Errorf("error sending file to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
 		return
 	}
 
 	return
 }
 
-func Send1(file string, reader io.Reader, hostname string, port uint16, queue string, username string, timeout time.Duration) (err error) {
+/*
+SendStdin  is a convenience function to send data from std input  to the remote printer
+*/
+func SendStdin(file string, reader io.Reader, hostname string, port uint16, queue string, username string, timeout time.Duration) (err error) {
 	lpr := &LprSend{}
 
 	err = lpr.Init(hostname, file, port, queue, username, timeout)
 	if err != nil {
-		err = fmt.Errorf("Error initializing connection to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
+		err = fmt.Errorf("error initializing connection to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
 		return
 	}
 
@@ -612,13 +623,13 @@ func Send1(file string, reader io.Reader, hostname string, port uint16, queue st
 
 	err = lpr.SendConfiguration()
 	if err != nil {
-		err = fmt.Errorf("Error sending configuration to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
+		err = fmt.Errorf("error sending configuration to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
 		return
 	}
 
-	err = lpr.sendFile1(reader)
+	err = lpr.sendStdin(reader)
 	if err != nil {
-		err = fmt.Errorf("Error sending file to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
+		err = fmt.Errorf("error sending file to LPR printer %s, port %d, queue: %s! %s", hostname, port, queue, err)
 		return
 	}
 
